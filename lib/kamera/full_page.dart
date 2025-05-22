@@ -14,6 +14,11 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   late List<CameraDescription> _cameras;
   CameraController? _controller;
+  double _zoom = 1.0;
+  double _minZoom = 1.0;
+  double _maxZoom = 1.0;
+  bool _isZoomSupported = false;
+
 
   @override
   void initState() {
@@ -23,6 +28,11 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future<void> _initializeCameras() async {
+    _minZoom = await _controller!.getMinZoomLevel();
+    _maxZoom = await _controller!.getMaxZoomLevel();
+    _isZoomSupported = _maxZoom > _minZoom;
+    _zoom = _minZoom;
+    await _controller!.setZoomLevel(_zoom);
     _cameras = await availableCameras();
     _controller = CameraController(_cameras[0], ResolutionPreset.max);
     await _controller!.initialize();
