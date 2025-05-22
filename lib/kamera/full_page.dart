@@ -26,6 +26,12 @@ class _CameraPageState extends State<CameraPage> {
     if (mounted) setState(() {});
   }
 
+  Future<void> _captureImage() async {
+    final XFile file = await _controller!.takePicture();
+    Navigator.pop(context, File(file.path));
+  }
+
+
   @override
   void dispose() {
     _controller?.dispose();
