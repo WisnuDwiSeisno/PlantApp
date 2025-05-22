@@ -40,12 +40,25 @@ class _CameraPageState extends State<CameraPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body:
-          _controller?.value.isInitialized == true
-              ? CameraPreview(_controller!)
-              : const Center(child: CircularProgressIndicator()),
-    );
+return Scaffold(
+  backgroundColor: Colors.black,
+  body: _controller?.value.isInitialized == true
+      ? Stack(
+          children: [
+            CameraPreview(_controller!),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 30),
+                child: IconButton(
+                  icon: const Icon(Icons.camera, color: Colors.white, size: 70),
+                  onPressed: _captureImage,
+                ),
+              ),
+            ),
+          ],
+        )
+      : const Center(child: CircularProgressIndicator()),
+);
   }
 }
