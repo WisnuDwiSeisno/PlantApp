@@ -49,6 +49,29 @@ class _CameraPageState extends State<CameraPage> {
     await _controller!.initialize();
     setState(() {});
   }
+  FlashMode _flashMode = FlashMode.off;
+
+  void _toggleFlash() async {
+    FlashMode next =
+        _flashMode == FlashMode.off
+            ? FlashMode.auto
+            : _flashMode == FlashMode.auto
+            ? FlashMode.always
+            : FlashMode.off;
+    await _controller!.setFlashMode(next);
+    setState(() => _flashMode = next);
+  }
+
+  IconData _flashIcon() {
+    switch (_flashMode) {
+      case FlashMode.auto:
+        return Icons.flash_auto;
+      case FlashMode.always:
+        return Icons.flash_on;
+      default:
+        return Icons.flash_off;
+    }
+  }
 
 
   @override
@@ -68,6 +91,14 @@ return Scaffold(
                         color: Colors.white,
                       ),
                       onPressed: _switchCamera,
+                    ),
+                  ),
+                  Positioned(
+                    top: 40,
+                    right: 20,
+                    child: IconButton(
+                      icon: Icon(_flashIcon(), color: Colors.white),
+                      onPressed: _toggleFlash,
                     ),
                   ),
             Align(
