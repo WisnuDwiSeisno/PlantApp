@@ -205,7 +205,17 @@ class _MapPageState extends State<MapPage> {
           ),
 
           const SizedBox(height: 8),
-          
+          if (_pickedAddress != null)
+            FloatingActionButton.extended(
+              heroTag: 'clear',
+              label: const Text('Hapus lokasi'),
+              onPressed: () {
+                setState(() {
+                  _pickedMarker = null;
+                  _pickedAddress = null;
+                });
+              },
+            ),
         ],
       ),
     );
