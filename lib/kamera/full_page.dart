@@ -3,7 +3,6 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-
 class CameraPage extends StatefulWidget {
   const CameraPage({super.key});
 
@@ -14,11 +13,12 @@ class CameraPage extends StatefulWidget {
 class _CameraPageState extends State<CameraPage> {
   late List<CameraDescription> _cameras;
   CameraController? _controller;
+  int _selectedCameraIdx = 0;
+  FlashMode _flashMode = FlashMode.off;
   double _zoom = 1.0;
   double _minZoom = 1.0;
   double _maxZoom = 1.0;
   bool _isZoomSupported = false;
-
 
   @override
   void initState() {
@@ -28,15 +28,35 @@ class _CameraPageState extends State<CameraPage> {
   }
 
   Future<void> _initializeCameras() async {
-    _minZoom = await _controller!.getMinZoomLevel();
-    _maxZoom = await _controller!.getMaxZoomLevel();
+    _cameras = await availableCameras();
+    await _setupCamera(_selectedCameraIdx);
+  }
+
+  Future<void> _setupCamera(int cameraIndex) async {
+    if (_controller != null) {
+      await _controller!.dispose();
+    }
+
+    final controller = CameraController(
+      _cameras[cameraIndex],
+      ResolutionPreset.max,
+      enableAudio: false,
+    );
+
+    await controller.initialize();
+    _minZoom = await controller.getMinZoomLevel();
+    _maxZoom = await controller.getMaxZoomLevel();
     _isZoomSupported = _maxZoom > _minZoom;
     _zoom = _minZoom;
-    await _controller!.setZoomLevel(_zoom);
-    _cameras = await availableCameras();
-    _controller = CameraController(_cameras[0], ResolutionPreset.max);
-    await _controller!.initialize();
-    if (mounted) setState(() {});
+    await controller.setZoomLevel(_zoom);
+    await controller.setFlashMode(_flashMode);
+
+    if (mounted) {
+      setState(() {
+        _controller = controller;
+        _selectedCameraIdx = cameraIndex;
+      });
+    }
   }
 
   Future<void> _captureImage() async {
@@ -44,25 +64,10 @@ class _CameraPageState extends State<CameraPage> {
     Navigator.pop(context, File(file.path));
   }
 
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-  int _selectedCameraIdx = 0;
-
   void _switchCamera() async {
     final nextIndex = (_selectedCameraIdx + 1) % _cameras.length;
-    _selectedCameraIdx = nextIndex;
-    _controller = CameraController(
-      _cameras[_selectedCameraIdx],
-      ResolutionPreset.max,
-    );
-    await _controller!.initialize();
-    setState(() {});
+    await _setupCamera(nextIndex);
   }
-  FlashMode _flashMode = FlashMode.off;
 
   void _toggleFlash() async {
     FlashMode next =
@@ -74,12 +79,14 @@ class _CameraPageState extends State<CameraPage> {
     await _controller!.setFlashMode(next);
     setState(() => _flashMode = next);
   }
+
   void _setZoom(double value) async {
     if (!_isZoomSupported) return;
     _zoom = value.clamp(_minZoom, _maxZoom);
     await _controller!.setZoomLevel(_zoom);
     setState(() {});
   }
+
   void _handleTap(TapDownDetails details, BoxConstraints constraints) {
     final offset = Offset(
       details.localPosition.dx / constraints.maxWidth,
@@ -88,8 +95,6 @@ class _CameraPageState extends State<CameraPage> {
     _controller?.setFocusPoint(offset);
     _controller?.setExposurePoint(offset);
   }
-
-
 
   IconData _flashIcon() {
     switch (_flashMode) {
@@ -102,47 +107,112 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
+  Widget _buildZoomControls() {
+    if (!_isZoomSupported) return const SizedBox.shrink();
+
+    return Positioned(
+      bottom: 160,
+      left: 20,
+      right: 20,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              _circleButton(Icons.looks_one, () => _setZoom(1.0), size: 40),
+              const SizedBox(width: 10),
+              if (_maxZoom >= 3.0)
+                _circleButton(Icons.looks_3, () => _setZoom(3.0), size: 40),
+              const SizedBox(width: 10),
+              if (_maxZoom >= 5.0)
+                _circleButton(Icons.looks_5, () => _setZoom(5.0), size: 40),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Icon(Icons.zoom_out, color: Colors.white),
+              Expanded(
+                child: Slider(
+                  value: _zoom,
+                  min: _minZoom,
+                  max: _maxZoom,
+                  divisions: ((_maxZoom - _minZoom) * 10).toInt(),
+                  label: '${_zoom.toStringAsFixed(1)}x',
+                  onChanged: (value) => _setZoom(value),
+                ),
+              ),
+              const Icon(Icons.zoom_in, color: Colors.white),
+            ],
+          ),
+          Container(
+            margin: const EdgeInsets.only(top: 10),
+            padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.white24,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '${_zoom.toStringAsFixed(1)}x',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-return Scaffold(
-  backgroundColor: Colors.black,
-  body: _controller?.value.isInitialized == true
-      ? Stack(
-          children: [
-            CameraPreview(_controller!),
-            Positioned(
-                    top: 40,
-                    left: 20,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.switch_camera,
-                        color: Colors.white,
-                      ),
-                      onPressed: _switchCamera,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body:
+          _controller?.value.isInitialized == true
+              ? LayoutBuilder(
+                builder: (context, constraints) {
+                  return GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: (details) => _handleTap(details, constraints),
+                    child: Stack(
+                      children: [
+                        CameraPreview(_controller!),
+                        _buildZoomControls(),
+                        Positioned(
+                          top: 40,
+                          right: 20,
+                          child: _circleButton(_flashIcon(), _toggleFlash),
+                        ),
+                        Positioned(
+                          top: 40,
+                          left: 20,
+                          child: _circleButton(
+                            Icons.switch_camera,
+                            _switchCamera,
+                          ),
+                        ),
+                        Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 30),
+                            child: _circleButton(
+                              Icons.camera,
+                              _captureImage,
+                              size: 70,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Positioned(
-                    top: 40,
-                    right: 20,
-                    child: IconButton(
-                      icon: Icon(_flashIcon(), color: Colors.white),
-                      onPressed: _toggleFlash,
-                    ),
-                  ),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: Padding(
-                padding: const EdgeInsets.only(bottom: 30),
-                child: IconButton(
-                  icon: const Icon(Icons.camera, color: Colors.white, size: 70),
-                  onPressed: _captureImage,
-                ),
-              ),
-            ),
-          ],
-        )
-      : const Center(child: CircularProgressIndicator()),
-);
+                  );
+                },
+              )
+              : const Center(child: CircularProgressIndicator()),
+    );
   }
 }
