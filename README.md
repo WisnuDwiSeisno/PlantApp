@@ -1,16 +1,16 @@
-# plantapp
+# Plant App
 
-A new Flutter project.
+## 1. Home Screen
+![Alt text](screenshots/homescreen.png)
 
-## Getting Started
+## 2. Camera
+![Alt text](screenshots/camera.png)
 
-This project is a starting point for a Flutter application.
+## 3. Camera Depan
+![Alt text](screenshots/front.png)
 
-A few resources to get you started if this is your first Flutter project:
+## 4. Detail
+![Alt text](screenshots/detail.png)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 5. Maps
+![Alt text](screenshots/maps.png)
