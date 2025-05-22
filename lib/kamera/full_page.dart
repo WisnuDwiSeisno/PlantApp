@@ -107,6 +107,22 @@ class _CameraPageState extends State<CameraPage> {
     }
   }
 
+  Widget _circleButton(IconData icon, VoidCallback onTap, {double size = 50}) {
+    return ClipOval(
+      child: Material(
+        color: Colors.white24,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            width: size,
+            height: size,
+            child: Icon(icon, color: Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildZoomControls() {
     if (!_isZoomSupported) return const SizedBox.shrink();
 
