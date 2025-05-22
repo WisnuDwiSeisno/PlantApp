@@ -74,6 +74,13 @@ class _CameraPageState extends State<CameraPage> {
     await _controller!.setFlashMode(next);
     setState(() => _flashMode = next);
   }
+  void _setZoom(double value) async {
+    if (!_isZoomSupported) return;
+    _zoom = value.clamp(_minZoom, _maxZoom);
+    await _controller!.setZoomLevel(_zoom);
+    setState(() {});
+  }
+
 
   IconData _flashIcon() {
     switch (_flashMode) {
