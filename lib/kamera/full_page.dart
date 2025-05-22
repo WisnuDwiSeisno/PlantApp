@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
 class CameraPage extends StatefulWidget {
@@ -8,11 +10,36 @@ class CameraPage extends StatefulWidget {
 }
 
 class _CameraPageState extends State<CameraPage> {
+  late List<CameraDescription> _cameras;
+  CameraController? _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCameras();
+  }
+
+  Future<void> _initializeCameras() async {
+    _cameras = await availableCameras();
+    _controller = CameraController(_cameras[0], ResolutionPreset.max);
+    await _controller!.initialize();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: Colors.black,
-      body: Center(child: CircularProgressIndicator()),
+      body:
+          _controller?.value.isInitialized == true
+              ? CameraPreview(_controller!)
+              : const Center(child: CircularProgressIndicator()),
     );
   }
 }
