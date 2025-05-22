@@ -37,6 +37,19 @@ class _CameraPageState extends State<CameraPage> {
     _controller?.dispose();
     super.dispose();
   }
+  int _selectedCameraIdx = 0;
+
+  void _switchCamera() async {
+    final nextIndex = (_selectedCameraIdx + 1) % _cameras.length;
+    _selectedCameraIdx = nextIndex;
+    _controller = CameraController(
+      _cameras[_selectedCameraIdx],
+      ResolutionPreset.max,
+    );
+    await _controller!.initialize();
+    setState(() {});
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +59,17 @@ return Scaffold(
       ? Stack(
           children: [
             CameraPreview(_controller!),
+            Positioned(
+                    top: 40,
+                    left: 20,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.switch_camera,
+                        color: Colors.white,
+                      ),
+                      onPressed: _switchCamera,
+                    ),
+                  ),
             Align(
               alignment: Alignment.bottomCenter,
               child: Padding(
